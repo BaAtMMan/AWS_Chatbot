@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Lambda deployment packages (regenerate as needed)
+*.zip
+!lambda_pdf_clean.zip  # Keep final deployment package
+
+# Dependencies (installed via pip)
+# Note: These are needed for Lambda, but don't commit to Git
+# They can be regenerated with: pip install -r requirements.txt -t .
+
+# AWS
+.aws/
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+lambda_pdf_kb_fixed/
+lambda_deployment.zip
+lambda_deployment_optimized.zip
+lambda_gemini_*.zip
+lambda_openai.zip
+lambda_pdf_*.zip
+!lambda_pdf_clean.zip
+
+# Documentation files (exclude from Git)
+# Keep README.md, exclude others
+FILE_ORGANIZATION_GUIDE.md
+GITHUB_PUSH_GUIDE.md
+TEMPLATE_YAML_EXPLANATION.md
+ARCHITECTURE_AND_FLOW.md
+PROJECT_REPORT.md
+# Keep FINAL_PROJECT_REPORT.md if you want it in repo
+# Keep README.md (always useful on GitHub)
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+
+
+
+# === AWS Lambda build dependencies inside src/ (DO NOT TRACK) ===
+src/boto3/
+src/botocore/
+src/dateutil/
+src/jmespath/
+src/s3transfer/
+src/*dist-info/
+src/__pycache__/
+src/bin/

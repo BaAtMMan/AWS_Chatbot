@@ -1,0 +1,215 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Chatbot Serverless Application with Amazon Lex V2, Google Gemini Pro, and AWS Bedrock
+
+  SAM Template for an intelligent chatbot using Google Gemini Pro LLM, DynamoDB for session 
+  storage, Lambda functions for fulfillment and API proxy, API Gateway for HTTP interface, 
+  and AWS Bedrock Knowledge Base for fallback responses.
+
+# Global settings for all serverless functions
+Globals:
+  Function:
+    Timeout: 120  # Increased for PDF processing
+    MemorySize: 512  # Increased for large PDF files
+    Runtime: python3.13
+    Environment:
+      Variables:
+        LOG_LEVEL: INFO
+
+Resources:
+  # ========================================
+  # DynamoDB Table for Session Management
+  # ========================================
+  SessionTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: SessionTable
+      AttributeDefinitions:
+        - AttributeName: session_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: session_id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Application
+          Value: Chatbot
+        - Key: Component
+          Value: SessionStorage
+
+  # ========================================
+  # Chatbot Fulfillment Lambda Function
+  # ========================================
+  ChatbotFulfillmentLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ChatbotFulfillmentLambda
+      CodeUri: src/
+      Handler: app.lambda_handler
+      Description: Lambda function for Lex V2 fulfillment with Google Gemini Pro and AWS Bedrock
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref SessionTable
+          KB_ID: L5K2TDFDK3
+          # Google Gemini Pro Configuration
+          USE_GEMINI: 'true'  # Set to 'false' to use only AWS Bedrock
+          GOOGLE_API_KEY: 'AIzaSyC0h4tJhT_XBqoLYW6QrEWmrpW9GjGGCVY'
+          GEMINI_MODEL: gemini-pro  # Model: gemini-pro (recommended)
+      Policies:
+        # DynamoDB CRUD permissions for SessionTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SessionTable
+        # Bedrock Knowledge Base permissions
+        - Statement:
+            - Sid: BedrockKnowledgeBaseAccess
+              Effect: Allow
+              Action:
+                - bedrock:RetrieveAndGenerate
+                - bedrock:Retrieve
+              Resource:
+                - arn:aws:bedrock:us-east-1:260003929445:knowledge-base/L5K2TDFDK3
+        # Bedrock Model permissions for all foundation models
+        - Statement:
+            - Sid: BedrockModelAccess
+              Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:InvokeModelWithResponseStream
+              Resource:
+                - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/anthropic.*'
+                - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.*'
+                - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/meta.*'
+        # AWS Marketplace permissions for Bedrock model subscriptions
+        - Statement:
+            - Sid: MarketplaceSubscriptionAccess
+              Effect: Allow
+              Action:
+                - aws-marketplace:ViewSubscriptions
+                - aws-marketplace:Subscribe
+              Resource: '*'
+      Tags:
+        Application: Chatbot
+        Component: Fulfillment
+
+  # Lambda Permission for Lex to invoke ChatbotFulfillmentLambda
+  LexInvokeFulfillmentPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ChatbotFulfillmentLambda
+      Action: lambda:InvokeFunction
+      Principal: lexv2.amazonaws.com
+      SourceArn: !Sub 'arn:aws:lex:${AWS::Region}:${AWS::AccountId}:bot-alias/ZUD17UCEC4/*'
+
+  # ========================================
+  # API Proxy Lambda Function
+  # ========================================
+  ApiProxyLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ApiProxyLambda
+      CodeUri: src_proxy/
+      Handler: app.lambda_handler
+      Description: Lambda function for API Gateway proxy to Amazon Lex V2
+      Policies:
+        # Amazon Lex V2 permissions
+        - Statement:
+            - Sid: LexRecognizeTextAccess
+              Effect: Allow
+              Action:
+                - lex:RecognizeText
+              Resource:
+                - arn:aws:lex:us-east-1:260003929445:bot-alias/ZUD17UCEC4/UUORFDMIMY
+      Events:
+        ChatApiEvent:
+          Type: HttpApi
+          Properties:
+            Path: /chat
+            Method: post
+            ApiId: !Ref ChatbotHttpApi
+      Tags:
+        Application: Chatbot
+        Component: ApiProxy
+
+  # ========================================
+  # HTTP API Gateway
+  # ========================================
+  ChatbotHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: prod
+      Description: HTTP API for Chatbot with Lex and Bedrock integration
+      CorsConfiguration:
+        AllowCredentials: false
+        AllowHeaders:
+          - '*'
+        AllowMethods:
+          - '*'
+        AllowOrigins:
+          - '*'
+        MaxAge: 600
+      Tags:
+        Application: Chatbot
+        Component: ApiGateway
+
+# ========================================
+# Outputs
+# ========================================
+Outputs:
+  ChatApiUrl:
+    Description: "API Gateway endpoint URL for the /chat endpoint"
+    Value: !Sub "https://${ChatbotHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/chat"
+    Export:
+      Name: !Sub "${AWS::StackName}-ChatApiUrl"
+  
+  SessionTableName:
+    Description: "Name of the DynamoDB Session Table"
+    Value: !Ref SessionTable
+    Export:
+      Name: !Sub "${AWS::StackName}-SessionTableName"
+  
+  SessionTableArn:
+    Description: "ARN of the DynamoDB Session Table"
+    Value: !GetAtt SessionTable.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-SessionTableArn"
+  
+  ChatbotFulfillmentLambdaArn:
+    Description: "ARN of the Chatbot Fulfillment Lambda Function"
+    Value: !GetAtt ChatbotFulfillmentLambda.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-ChatbotFulfillmentLambdaArn"
+  
+  ChatbotFulfillmentLambdaName:
+    Description: "Name of the Chatbot Fulfillment Lambda Function"
+    Value: !Ref ChatbotFulfillmentLambda
+    Export:
+      Name: !Sub "${AWS::StackName}-ChatbotFulfillmentLambdaName"
+  
+  ApiProxyLambdaArn:
+    Description: "ARN of the API Proxy Lambda Function"
+    Value: !GetAtt ApiProxyLambda.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiProxyLambdaArn"
+  
+  ApiProxyLambdaName:
+    Description: "Name of the API Proxy Lambda Function"
+    Value: !Ref ApiProxyLambda
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiProxyLambdaName"
+  
+  BedrockKnowledgeBaseId:
+    Description: "Bedrock Knowledge Base ID used by the chatbot"
+    Value: L5K2TDFDK3
+    Export:
+      Name: !Sub "${AWS::StackName}-BedrockKnowledgeBaseId"
+  
+  LexBotAliasArn:
+    Description: "Amazon Lex Bot Alias ARN"
+    Value: arn:aws:lex:us-east-1:260003929445:bot-alias/ZUD17UCEC4/UUORFDMIMY
+    Export:
+      Name: !Sub "${AWS::StackName}-LexBotAliasArn"
