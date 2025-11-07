@@ -51,47 +51,14 @@ Resources:
       FunctionName: ChatbotFulfillmentLambda
       CodeUri: src/
       Handler: app.lambda_handler
-      Description: Lambda function for Lex V2 fulfillment with Google Gemini Pro and AWS Bedrock
+      Description: Lambda function for Lex V2 fulfillment 
       Environment:
         Variables:
           TABLE_NAME: !Ref SessionTable
-          KB_ID: L5K2TDFDK3
-          # Google Gemini Pro Configuration
-          USE_GEMINI: 'true'  # Set to 'false' to use only AWS Bedrock
-          GOOGLE_API_KEY: 'AIzaSyC0h4tJhT_XBqoLYW6QrEWmrpW9GjGGCVY'
-          GEMINI_MODEL: gemini-pro  # Model: gemini-pro (recommended)
       Policies:
         # DynamoDB CRUD permissions for SessionTable
         - DynamoDBCrudPolicy:
             TableName: !Ref SessionTable
-        # Bedrock Knowledge Base permissions
-        - Statement:
-            - Sid: BedrockKnowledgeBaseAccess
-              Effect: Allow
-              Action:
-                - bedrock:RetrieveAndGenerate
-                - bedrock:Retrieve
-              Resource:
-                - arn:aws:bedrock:us-east-1:260003929445:knowledge-base/L5K2TDFDK3
-        # Bedrock Model permissions for all foundation models
-        - Statement:
-            - Sid: BedrockModelAccess
-              Effect: Allow
-              Action:
-                - bedrock:InvokeModel
-                - bedrock:InvokeModelWithResponseStream
-              Resource:
-                - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/anthropic.*'
-                - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.*'
-                - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/meta.*'
-        # AWS Marketplace permissions for Bedrock model subscriptions
-        - Statement:
-            - Sid: MarketplaceSubscriptionAccess
-              Effect: Allow
-              Action:
-                - aws-marketplace:ViewSubscriptions
-                - aws-marketplace:Subscribe
-              Resource: '*'
       Tags:
         Application: Chatbot
         Component: Fulfillment
@@ -142,7 +109,7 @@ Resources:
     Type: AWS::Serverless::HttpApi
     Properties:
       StageName: prod
-      Description: HTTP API for Chatbot with Lex and Bedrock integration
+      Description: HTTP API for Chatbot with Lex and DynamoDB
       CorsConfiguration:
         AllowCredentials: false
         AllowHeaders:
@@ -201,12 +168,6 @@ Outputs:
     Value: !Ref ApiProxyLambda
     Export:
       Name: !Sub "${AWS::StackName}-ApiProxyLambdaName"
-  
-  BedrockKnowledgeBaseId:
-    Description: "Bedrock Knowledge Base ID used by the chatbot"
-    Value: L5K2TDFDK3
-    Export:
-      Name: !Sub "${AWS::StackName}-BedrockKnowledgeBaseId"
   
   LexBotAliasArn:
     Description: "Amazon Lex Bot Alias ARN"
