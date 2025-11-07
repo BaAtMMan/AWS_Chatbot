@@ -67,3 +67,18 @@ src/s3transfer/
 src/*dist-info/
 src/__pycache__/
 src/bin/
+
+
+# === AWS Lambda and dependency build artifacts ===
+.aws-sam/
+lambda_*.zip
+*.zip
+src/PyPDF2/
+src/boto3/
+src/botocore/
+src/dateutil/
+src/jmespath/
+src/s3transfer/
+src/*dist-info/
+src/__pycache__/
+src/bin/
