@@ -1,11 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  Chatbot Serverless Application with Amazon Lex V2, Google Gemini Pro, and AWS Bedrock
+  Chatbot Serverless Application with Amazon Lex V2 and DynamoDB
 
-  SAM Template for an intelligent chatbot using Google Gemini Pro LLM, DynamoDB for session 
-  storage, Lambda functions for fulfillment and API proxy, API Gateway for HTTP interface, 
-  and AWS Bedrock Knowledge Base for fallback responses.
+  Simplified SAM Template for an intelligent chatbot using 
+  Amazon Lex V2, DynamoDB for session storage, Lambda for fulfillment and proxy, 
+  and API Gateway for HTTP access.
 
 # Global settings for all serverless functions
 Globals:
