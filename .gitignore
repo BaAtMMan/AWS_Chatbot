@@ -48,6 +48,8 @@ GITHUB_PUSH_GUIDE.md
 TEMPLATE_YAML_EXPLANATION.md
 ARCHITECTURE_AND_FLOW.md
 PROJECT_REPORT.md
+GITHUB_COMMANDS.md
+FINAL_PROJECT_REPORT.md
 # Keep FINAL_PROJECT_REPORT.md if you want it in repo
 # Keep README.md (always useful on GitHub)
 
@@ -82,3 +84,5 @@ src/s3transfer/
 src/*dist-info/
 src/__pycache__/
 src/bin/
+
+
