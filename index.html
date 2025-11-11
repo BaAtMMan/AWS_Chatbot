@@ -207,13 +207,13 @@
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <h1>🤖 Chatbot Assistant</h1>
+            <h1>Chatbot Assistant</h1>
             <p>Ask me anything! I'm here to help.</p>
         </div>
         
         <div class="chat-messages" id="chatMessages">
             <div class="welcome-message">
-                👋 Welcome! Start a conversation by typing a message below.
+                Welcome! Start a conversation by typing a message below.
             </div>
         </div>
         
@@ -407,9 +407,9 @@
             try {
                 const response = await sendMessage('test');
                 const botReply = response.reply || response.bot_reply || 'No reply';
-                addMessage('✅ API Test Successful! Bot replied: ' + botReply, false);
+                addMessage('API Test Successful! Bot replied: ' + botReply, false);
             } catch (error) {
-                addMessage('❌ API Test Failed: ' + error.message, false);
+                addMessage('API Test Failed: ' + error.message, false);
                 console.error('API Test Error:', error);
             }
         }
