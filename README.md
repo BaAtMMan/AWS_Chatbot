@@ -114,11 +114,3 @@ POST https://YOUR_API_GATEWAY_URL/prod/chat
 │   └── requirements.txt
 └── README.md
 ```
-
-## Next Steps
-
-1. **Create your Lex bot** in the AWS Console
-2. **Update the LexBotArn parameter** in template.yaml
-3. **Customize the bot logic** in `src/app.py`
-4. **Deploy and test** your application
-5. **Integrate with your frontend** application
